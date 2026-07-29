@@ -1,0 +1,18 @@
+# Runtime
+logs/
+*.pid
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# ---------------------------------------------------------------------------
+# GAME DATA — never commit fangame / Pokémon assets
+# Place TGOM 4.2.3 under game/Pokemon TGOM 4.2.3/ locally (see game/README.md)
+# ---------------------------------------------------------------------------
+game/**
+!game/README.md
+
+# Local debug
+**/font_debug.txt
+**/*.rxdata.bak

@@ -1,0 +1,2 @@
+# mkxp-z / Game.ini encoding detection expects CRLF
+game/**/Game.ini text eol=crlf
