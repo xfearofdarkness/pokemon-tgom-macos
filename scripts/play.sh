@@ -27,8 +27,9 @@ if [[ -f "$TGOM_LOGS/mkxp.pid" ]]; then
     echo "Game already running (PID $old). Bring the window to the front."
     exit 0
   fi
+  # Stale pid file from a previous session
+  rm -f "$TGOM_LOGS/mkxp.pid"
 fi
-
 # Pokémon Essentials expects Windows-style TEMP (AnimatedBitmap Dir.chdir)
 export TMPDIR="${TMPDIR:-/tmp}"
 export TEMP="${TEMP:-$TMPDIR}"

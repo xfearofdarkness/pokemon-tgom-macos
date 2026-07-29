@@ -63,18 +63,21 @@ changed = 0
 ev.pages[0].list.each do |c|
   next unless c.respond_to?(:code)
   if c.code == 231 && c.parameters[1].to_s == "trainer000"
-    if c.parameters[4].to_i < 0 || c.parameters[4].to_i == 176
+    next if c.parameters[4].to_i == 176 && c.parameters[5].to_i == 200
+    if c.parameters[4].to_i < 0 || c.parameters[4].to_i != 176
       c.parameters[4] = 176
       c.parameters[5] = 200
       changed += 1
     end
   elsif c.code == 231 && c.parameters[1].to_s == "trainer001"
+    next if c.parameters[4].to_i == 336 && c.parameters[5].to_i == 200
     if c.parameters[4].to_i <= 200
       c.parameters[4] = 336
       c.parameters[5] = 200
       changed += 1
     end
   elsif c.code == 232 && [5, 6].include?(c.parameters[0].to_i)
+    next if c.parameters[2].to_i == 1 && c.parameters[4].to_i == 256 && c.parameters[5].to_i == 200
     if c.parameters[4].to_i == 0 && c.parameters[5].to_i == 0
       c.parameters[2] = 1
       c.parameters[4] = 256
@@ -83,7 +86,6 @@ ev.pages[0].list.each do |c|
     end
   end
 end
-
 if changed > 0
   File.write(path, Marshal.dump(map))
   puts "  + Map001 gender pictures updated (#{changed} cmds)"

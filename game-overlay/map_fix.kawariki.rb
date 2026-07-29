@@ -175,11 +175,7 @@ Preload.on_boot do |_ctx|
     end
 
     # When gender/player graphic changes, refresh charset immediately at current tile
-    if defined?(Kernel) || true
-      if defined?(pbChangePlayer)
-        alias_method_ok = false
-      end
-      Kernel.send(:define_method, :pbChangePlayer) do |id|
+    Kernel.send(:define_method, :pbChangePlayer) do |id|
         return false if id < 0 || id >= 8
         meta = pbGetMetadata(0, MetadataPlayerA + id)
         return false if !meta
@@ -200,7 +196,6 @@ Preload.on_boot do |_ctx|
         end
         true
       end
-    end
 
     # Gender select uses Show Picture trainer000/001 (NOT map events / trchar*).
     # Original Map001 put male at x=-180 (off-screen left on 512-wide). Safety net

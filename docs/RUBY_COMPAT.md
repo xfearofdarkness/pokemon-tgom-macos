@@ -22,6 +22,8 @@ Offline checks: `./scripts/test-smoke.sh`.
 |--------------|-------------|---------|------------|
 | `s[0]` → **Fixnum** byte | `s[0]` → **String** | `sprintf("%02x", s[0])` ArgumentError | `early_compat` sprintf/`%` shim |
 | `sprintf("%d", nil)` often coerced | TypeError | Crash on bad format args | sprintf shim (`nil` → `0`) |
+| `str[i] == 0xNN` (byte) | `str[i]` is String | GIF magic, BOM, trailing `/` checks always fail | `String#==` single-byte vs Integer |
+| `ENV["TEMP"]+"\\file"` | Unix TEMP + backslash | wrong path (`/tmp\\file`) | `String#+` joins as `File.join` on Unix |
 | `Thread.critical` | Removed | BitmapCache WeakRef NameError | `ruby18` polyfill |
 | `Object#type` | Removed | NoMethodError | `ruby18` → `class` |
 | `Hash#index(val)` | Renamed `#key` | NoMethodError | `ruby18` alias |

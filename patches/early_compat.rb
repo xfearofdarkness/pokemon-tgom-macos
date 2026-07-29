@@ -1,6 +1,15 @@
 # Early Ruby 1.8 + capture native mkxp Input before Essentials overwrites it
-kawariki_ruby18 = File.expand_path("~/Library/Application Support/RPGM-Launcher/kawariki/libs/ruby18.rb")
-require kawariki_ruby18 if File.exist?(kawariki_ruby18)
+# Prefer deployed Kawariki copy, fall back to this repo's patches/ruby18.rb
+_ruby18_candidates = [
+  File.expand_path("~/Library/Application Support/RPGM-Launcher/kawariki/libs/ruby18.rb"),
+  File.expand_path("ruby18.rb", __dir__)
+]
+_ruby18_candidates.each do |path|
+  if File.exist?(path)
+    require path
+    break
+  end
+end
 
 unless Thread.respond_to?(:critical)
   class Thread
@@ -14,7 +23,12 @@ Thread.critical = false if Thread.respond_to?(:critical=)
 
 ENV["TEMP"] ||= ENV["TMPDIR"] || "/tmp"
 ENV["TMP"]  ||= ENV["TEMP"]
-
+# Prefer real directories (macOS /tmp is often a symlink)
+begin
+  ENV["TEMP"] = File.realpath(ENV["TEMP"]) if ENV["TEMP"] && File.directory?(ENV["TEMP"])
+  ENV["TMP"]  = ENV["TEMP"]
+rescue StandardError
+end
 # ---------------------------------------------------------------------------
 # sprintf / format / String#% — Ruby 1.8 → 3 compatibility
 #
@@ -105,11 +119,36 @@ class String
     coerced = TGSprintfCompat.coerce_args(args)
     __tg_percent_orig(arg.is_a?(Array) ? coerced : coerced[0])
   end
+
+  # Ruby 1.8: str[i] was a Fixnum byte; Integer comparisons like
+  #   filestring[0]==0x47   (GIF magic)
+  #   file[file.length-1]!=0x2F  (trailing slash)
+  #   line[0]==0xEF && line[1]==0xBB && line[2]==0xBF  (UTF-8 BOM)
+  # In Ruby 1.9+ str[i] is a String, so == Integer is always false.
+  # When the left side is a single-byte string, compare as byte.
+  alias_method :__tg_str_eq, :== unless method_defined?(:__tg_str_eq)
+  def ==(other)
+    if other.is_a?(Integer) && bytesize == 1
+      return getbyte(0) == other
+    end
+    __tg_str_eq(other)
+  end
+
+  # Windows PE often does ENV["TEMP"]+"\\file.ext". On Unix TEMP is "/tmp"
+  # and that yields "/tmp\\file" (wrong). Treat unix_base + "\\..." as File.join.
+  alias_method :__tg_str_plus, :+ unless method_defined?(:__tg_str_plus)
+  def +(other)
+    if other.is_a?(String) && other.start_with?("\\") && include?("/") && !include?("\\")
+      rest = other.tr("\\", "/")
+      rest = rest.sub(%r{\A/+}, "")
+      return File.join(self, rest)
+    end
+    __tg_str_plus(other)
+  end
 end
 
-STDERR.puts "[tg-early] sprintf/format/String#% Ruby 1.8-compat shim installed"
+STDERR.puts "[tg-early] sprintf/format/String#% + byte== + TEMP path shims installed"
 STDERR.flush
-
 # Snapshot mkxp's built-in Input methods (Essentials replaces these with Win32API)
 if defined?(Input)
   $TG_NATIVE_INPUT = {}

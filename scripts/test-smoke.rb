@@ -571,6 +571,30 @@ begin
   else
     fail "Integer#chr high byte failed", ch.inspect
   end
+
+  # From game Scripts: AnimatedBitmap GIF magic / slash; Compiler BOM
+  if "G" == 0x47 && "/" == 0x2F && ("G" != 0x48)
+    pass "String#== byte (GIF 0x47 / slash 0x2F) — AnimatedBitmap"
+  else
+    fail "String#== byte compare broken"
+  end
+  if "\xEF".b == 0xEF && "\xBB".b == 0xBB && "\xBF".b == 0xBF
+    pass "BOM byte compares — Compiler/Intl_Messages"
+  else
+    fail "BOM byte compares failed"
+  end
+  joined = "/tmp" + "\\record.wav"
+  if joined == "/tmp/record.wav"
+    pass "TEMP+\\\\file join (Audio_Utilities/Sprite_Resizer)"
+  else
+    fail "TEMP backslash join wrong", joined.inspect
+  end
+  file = "Graphics/Characters/"
+  if file[file.length - 1] == 0x2F
+    pass "trailing slash byte (GifBitmap skip dir)"
+  else
+    fail "trailing slash check broken", file[file.length - 1].inspect
+  end
 rescue => e
   fail "Ruby compat runtime error", "#{e.class}: #{e.message}\n#{e.backtrace&.first}"
 end
@@ -584,18 +608,33 @@ begin
   if body.include?("sprintf('%%%02x', s[0])") || body.include?('sprintf("%%%02x", s[0])')
     pass "Scripts still contain Sockets s[0] sprintf (shim required)"
   else
-    # format may use different quotes after edits
     if body =~ /sprintf\s*\(\s*['"]%%%02x['"]\s*,\s*s\[0\]/
       pass "Scripts still contain Sockets s[0] sprintf (shim required)"
     else
       fail "could not find Sockets s[0] sprintf pattern (game update?)"
     end
   end
+  ab = scripts.find { |_, n, _| n.to_s == "AnimatedBitmap" }
+  abody = ab ? (Zlib::Inflate.inflate(ab[2].to_s) rescue ab[2].to_s) : ""
+  if abody.include?("filestring[0]==0x47") || abody.include?("filestring[0] == 0x47")
+    pass "Scripts contain GifBitmap 0x47 magic (byte== shim required)"
+  else
+    fail "GifBitmap 0x47 pattern missing"
+  end
+  util = scripts.find { |_, n, _| n.to_s == "PSystem_Utilities" }
+  ubody = util ? (Zlib::Inflate.inflate(util[2].to_s) rescue util[2].to_s) : ""
+  if ubody.include?("stringLiterals") && ubody.include?("x7f-x9f") && !ubody.match?(%r{stringLiterals.*/n})
+    pass "Original PSystem_Utilities has unsafe JSON regex (dummy replace required)"
+  elsif ubody.include?("stringLiterals")
+    pass "PSystem_Utilities JSON regex present (check dummy deploy)"
+  else
+    fail "PSystem_Utilities missing stringLiterals"
+  end
 rescue => e
-  fail "Scripts.rxdata sprintf scan failed", e.message
+  fail "Scripts.rxdata scan failed", e.message
 end
 else
-  puts "  SKIP  Scripts.rxdata sprintf scan (no local game)"
+  puts "  SKIP  Scripts.rxdata scan (no local game)"
 end
 
 # ---------------------------------------------------------------------------

@@ -134,5 +134,5 @@ end
 class String
   def to_a
     lines.to_a
-  end
+  end unless method_defined?(:to_a)
 end
