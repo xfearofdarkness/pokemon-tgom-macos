@@ -9,9 +9,11 @@ Uses **[mkxp-z](https://github.com/mkxp-z/mkxp-z)** (Metal) + Kawariki-style pat
 > Fangame assets and Pokémon IP stay off GitHub. You supply TGOM 4.2.3 locally  
 > (see [`game/README.md`](game/README.md)).
 
-> **Early / experimental.** This project is still new. Boot and basic play work on
-> Apple Silicon with mkxp-z, but you may still hit crashes, missing features, or
-> odd edge cases — especially deeper in the campaign. Reports and PRs welcome.
+## Status: experimental
+
+This project is **still new**. Boot and basic play work on Apple Silicon with mkxp-z, but you may still hit **crashes**, **missing features**, or **odd edge cases** — especially deeper in the campaign.
+
+Treat it as a work in progress. Bug reports and PRs are welcome.
 
 ## Quick start
 
