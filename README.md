@@ -26,8 +26,9 @@ Uses **[mkxp-z](https://github.com/mkxp-z/mkxp-z)** (Metal) + Kawariki-style pat
 
 # 5) Play
 ./scripts/play.sh
-./scripts/stop.sh
 ```
+
+Fenster einfach über die normalen macOS-Bedienelemente schließen.
 
 ### Controls
 
