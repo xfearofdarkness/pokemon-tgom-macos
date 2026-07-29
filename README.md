@@ -43,7 +43,7 @@ Fenster einfach über die normalen macOS-Bedienelemente schließen.
 ```text
 patches/          Ruby 1.8→3 shims, Win32API, Essentials utilities port
 game-overlay/     *.kawariki.rb runtime fixes copied into the game folder
-scripts/          setup-mkxpz / setup-game / play / stop / smoke / map patch
+scripts/          setup-mkxpz / setup-game / play / smoke / map patch
 docs/             RUBY_COMPAT.md and notes
 game/README.md    where to put TGOM (game data is gitignored)
 ```
