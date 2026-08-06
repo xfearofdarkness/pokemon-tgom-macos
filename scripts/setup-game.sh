@@ -112,4 +112,4 @@ if app.parent.is_dir():
 print("  + mkxp.json")
 PY
 
-echo "Done. Run: ./scripts/test-smoke.sh && ./scripts/play.sh"
+echo "Done. Run: ./scripts/play.sh"

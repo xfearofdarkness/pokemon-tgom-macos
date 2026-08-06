@@ -34,7 +34,6 @@ Then:
 
 ```bash
 ./scripts/setup-game.sh
-./scripts/test-smoke.sh   # optional
 ./scripts/play.sh
 ```
 
@@ -42,19 +41,19 @@ Close the game window with the usual macOS controls.
 
 ### Controls
 
-| Action  | Keys                  |
-|---------|-----------------------|
-| Move    | Arrow keys            |
-| Confirm | Z / Enter / Space     |
-| Cancel  | X / Esc               |
+| Action  | Keys              |
+|---------|-------------------|
+| Move    | Arrow keys        |
+| Confirm | Z / Enter / Space |
+| Cancel  | X / Esc           |
 
 ## Layout
 
 ```text
 patches/        Preload shims and Kawariki ports
 game-overlay/   Runtime fixes applied into the game folder
-scripts/        Setup, launch, smoke tests
-docs/           Technical notes (Ruby compatibility)
+scripts/        Setup and launch
+docs/           Technical notes
 game/           Local game install (gitignored; see game/README.md)
 ```
 
@@ -71,7 +70,7 @@ game/           Local game install (gitignored; see game/README.md)
 | Display     | 512×384 logical resolution, OS window scaling |
 | Input       | Native mkxp key handling |
 | Fonts       | Bundled Power Green family; installer dialog suppressed |
-| Ruby        | 1.8-era Essentials APIs on modern MRI (see [docs/RUBY_COMPAT.md](docs/RUBY_COMPAT.md)) |
+| Ruby        | 1.8-era Essentials APIs on modern MRI ([docs/RUBY_COMPAT.md](docs/RUBY_COMPAT.md)) |
 | Bag / items | Essentials 18 storage helpers |
 | Forms       | fSpecies helpers restored where the utilities port omits them |
 | Intro       | Gender-select picture placement |
@@ -79,13 +78,22 @@ game/           Local game install (gitignored; see game/README.md)
 
 ## Development
 
+After changing patches or overlays:
+
 ```bash
 ./scripts/setup-mkxpz.sh
 ./scripts/setup-game.sh
+```
+
+Offline regression checks (optional, for contributors):
+
+```bash
 ./scripts/test-smoke.sh
 ```
 
-Local game trees stay untracked via `.gitignore`.
+Details: [docs/SMOKE_TESTS.md](docs/SMOKE_TESTS.md).
+
+Local game trees are gitignored.
 
 ## Credits
 
