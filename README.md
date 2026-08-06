@@ -1,96 +1,96 @@
-# TGOM on macOS (mkxp-z)
+# TGOM on macOS
 
-Unofficial **macOS / Apple Silicon** compatibility stack for  
-**Pokémon This Gym of Mine 4.2.3** (RPG Maker XP / Pokémon Essentials ~18).
+Unofficial compatibility layer for **[Pokémon This Gym of Mine](https://www.pokecommunity.com/) 4.2.3** on Apple Silicon / macOS.
 
-Uses **[mkxp-z](https://github.com/mkxp-z/mkxp-z)** (Metal) + Kawariki-style patches instead of Wine.
+Built on **[mkxp-z](https://github.com/mkxp-z/mkxp-z)** (Metal) and Kawariki-style runtime patches for RPG Maker XP / Pokémon Essentials ~18.
 
-> **This repository does not include the game.**  
-> Fangame assets and Pokémon IP stay off GitHub. You supply TGOM 4.2.3 locally  
-> (see [`game/README.md`](game/README.md)).
+Game data is **not** part of this repository. Install TGOM 4.2.3 separately under [`game/`](game/README.md).
 
 ## Status: experimental
 
-This project is **still new**. Boot and basic play work on Apple Silicon with mkxp-z, but you may still hit **crashes**, **missing features**, or **odd edge cases** — especially deeper in the campaign.
+This project is early. Title and early game play on Apple Silicon with mkxp-z; later content may still crash or behave oddly.
 
-Treat it as a work in progress. Bug reports and PRs are welcome.
+Bug reports and pull requests are welcome.
 
-## Quick start
+## Requirements
+
+- macOS (Apple Silicon tested)
+- TGOM **4.2.3** from the original release
+- Network access once for engine / soundfont download
+
+## Setup
 
 ```bash
-# 1) Engine + Kawariki (once)
 ./scripts/setup-mkxpz.sh
+```
 
-# 2) Install the game yourself
-#    Extract TGOM 4.2.3 to:  game/Pokemon TGOM 4.2.3/
+Place the extracted game at:
 
-# 3) Apply macOS overlays into that folder
+```text
+game/Pokemon TGOM 4.2.3/
+```
+
+Then:
+
+```bash
 ./scripts/setup-game.sh
-
-# 4) Sanity-check (works partially without game; full checks with game)
-./scripts/test-smoke.sh
-
-# 5) Play
+./scripts/test-smoke.sh   # optional
 ./scripts/play.sh
 ```
 
-Fenster einfach über die normalen macOS-Bedienelemente schließen.
+Close the game window with the usual macOS controls.
 
 ### Controls
 
-| Action  | Keys                 |
-|---------|----------------------|
-| Move    | Arrow keys           |
-| Confirm | **Z** / Enter / Space |
-| Cancel  | **X** / Esc          |
+| Action  | Keys                  |
+|---------|-----------------------|
+| Move    | Arrow keys            |
+| Confirm | Z / Enter / Space     |
+| Cancel  | X / Esc               |
 
-## What’s in this repo
+## Layout
 
 ```text
-patches/          Ruby 1.8→3 shims, Win32API, Essentials utilities port
-game-overlay/     *.kawariki.rb runtime fixes copied into the game folder
-scripts/          setup-mkxpz / setup-game / play / smoke / map patch
-docs/             RUBY_COMPAT.md and notes
-game/README.md    where to put TGOM (game data is gitignored)
+patches/        Preload shims and Kawariki ports
+game-overlay/   Runtime fixes applied into the game folder
+scripts/        Setup, launch, smoke tests
+docs/           Technical notes (Ruby compatibility)
+game/           Local game install (gitignored; see game/README.md)
 ```
 
-Installed outside the repo by `setup-mkxpz.sh`:
+`setup-mkxpz.sh` installs under `~/Library/Application Support/RPGM-Launcher/`:
 
-- `~/Library/Application Support/RPGM-Launcher/Z-universal.app`
-- `…/kawariki/` ports
-- `…/GMGSx.SF2` MIDI soundfont
+- `Z-universal.app` — mkxp-z
+- `kawariki/` — preload and ports
+- `GMGSx.SF2` — MIDI soundfont
 
-## What the overlays fix
+## Compatibility work
 
-| Area | Fix |
-|------|-----|
-| Display | 512×384 framebuffer + window scaling |
-| Input | Native mkxp keys (no Win32 `GetAsyncKeyState`) |
-| Fonts | Skip Windows font installer; Power Green |
-| Ruby 1.8→3 | `sprintf`/`s[0]`, `Thread.critical`, `File.exists?`, … |
-| Bag / items | Essentials 18 `ItemStorageHelper` (no PE17 `POCKETAUTOSORT`) |
-| Forms | `pbGetSpeciesFromFSpecies` etc. |
-| Intro gender | Picture coordinates + optional portrait swap |
-| Empty charsets | No `EISDIR` on `Graphics/Characters/` |
-
-Details: [`docs/RUBY_COMPAT.md`](docs/RUBY_COMPAT.md).
+| Area        | Notes |
+|-------------|--------|
+| Display     | 512×384 logical resolution, OS window scaling |
+| Input       | Native mkxp key handling |
+| Fonts       | Bundled Power Green family; installer dialog suppressed |
+| Ruby        | 1.8-era Essentials APIs on modern MRI (see [docs/RUBY_COMPAT.md](docs/RUBY_COMPAT.md)) |
+| Bag / items | Essentials 18 storage helpers |
+| Forms       | fSpecies helpers restored where the utilities port omits them |
+| Intro       | Gender-select picture placement |
+| Characters  | Empty charset paths handled safely |
 
 ## Development
 
 ```bash
-# After editing patches/
 ./scripts/setup-mkxpz.sh
-./scripts/setup-game.sh    # if game is present
+./scripts/setup-game.sh
 ./scripts/test-smoke.sh
 ```
 
-Do **not** commit anything under `game/Pokemon TGOM 4.2.3/` — `.gitignore` blocks it.
+Local game trees stay untracked via `.gitignore`.
 
-## Credits & legal
+## Credits
 
-- **Game:** Pokémon This Gym of Mine — original authors / their distribution channels  
-- **Engine:** mkxp-z / m5kro launcher builds + Kawariki-style ports  
-- **Pokémon** is a trademark of Nintendo / Creatures / GAME FREAK  
+- **Pokémon This Gym of Mine** — original authors and distributors  
+- **mkxp-z** / launcher builds and Kawariki-style ports — respective maintainers  
+- **Pokémon** — trademark of Nintendo / Creatures Inc. / GAME FREAK  
 
-This project is an **unofficial launcher & compatibility layer** only.  
-You must obtain the game legally from its authors. No warranty.
+Unofficial project. Obtain the game from its authors. Provided as-is, without warranty.

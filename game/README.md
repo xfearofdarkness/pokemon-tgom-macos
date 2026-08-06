@@ -1,27 +1,30 @@
-# Game data (not in git)
+# Game install location
 
-This folder holds **Pokémon This Gym of Mine 4.2.3** after you install it yourself.
+This directory is where a local copy of **Pokémon This Gym of Mine 4.2.3** lives.
 
-The public GitHub repo **does not ship the game** (fangame / Pokémon IP — redistributing the full package is a bad idea).
+The public repository ships tooling and patches only. Game assets stay on your machine and are gitignored.
 
-## Install
+## Expected layout
 
-1. Get **TGOM 4.2.3** from the original release (e.g. PokeCommunity / the authors’ download).
-2. Extract so you have:
+After extraction:
 
-   ```text
-   game/Pokemon TGOM 4.2.3/Game.exe
-   game/Pokemon TGOM 4.2.3/Data/Scripts.rxdata
-   game/Pokemon TGOM 4.2.3/Graphics/
-   …
-   ```
+```text
+game/Pokemon TGOM 4.2.3/Game.exe
+game/Pokemon TGOM 4.2.3/Data/Scripts.rxdata
+game/Pokemon TGOM 4.2.3/Graphics/
+…
+```
 
-3. From the repo root:
+Obtain **4.2.3** from the original TGOM release (for example via PokeCommunity or the authors’ download).
 
-   ```bash
-   ./scripts/setup-mkxpz.sh   # engine + Kawariki
-   ./scripts/setup-game.sh    # apply macOS overlays into the game folder
-   ./scripts/play.sh
-   ```
+## Apply tooling
 
-`setup-game.sh` copies `game-overlay/*`, writes `Game.ini` + `mkxp.json`, optionally fixes gender-select pictures/map data, and never uploads your game files.
+From the repository root:
+
+```bash
+./scripts/setup-mkxpz.sh
+./scripts/setup-game.sh
+./scripts/play.sh
+```
+
+`setup-game.sh` copies `game-overlay/` into the game folder, writes `Game.ini` and `mkxp.json`, and applies small local fixes (intro portraits / Map001 gender pictures when needed).
