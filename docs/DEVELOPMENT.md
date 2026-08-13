@@ -6,58 +6,68 @@ How the compatibility layer is structured and how to change it.
 
 Smoke tests need Ruby. Set `RUBY` to an interpreter, or use one from Command Line Tools / Homebrew.
 
-The game folder and `TGOM_SUPPORT` (default `~/Library/Application Support/RPGM-Launcher`) must be writable. First engine install needs network access.
+The game folder and `TGOM_SUPPORT` (default `~/Library/Application Support/RPGM-Launcher`) must be writable. First engine install needs network access. A failed soundfont download is a warning; mkxp-z and Kawariki failing to download is a hard error.
 
 Optional overrides (absolute paths): `TGOM_SUPPORT`, `MKXP_APP`, `MKXP_BIN`, `TGOM_SOUNDFONT`, `RUBY`.
 
 ## Workflow
 
 ```bash
-./scripts/setup-mkxpz.sh   # engine, Kawariki, soundfont (once)
-./scripts/setup-game.sh    # copy overlays + write mkxp.json
-./scripts/play.sh          # launch (bootstraps the two above if needed)
-./scripts/test-smoke.sh    # optional offline checks
+./scripts/setup-mkxpz.sh   # engine, Kawariki, soundfont; copies ports into kawariki/
+./scripts/setup-game.sh    # copy game-overlay/ and write Game.ini + mkxp.json
+./scripts/play.sh          # launch
+./scripts/test-smoke.sh    # offline checks
 ```
 
-`play.sh` recopies overlays only when `game/Pokemon TGOM 4.2.3/mkxp.json` is missing. After editing `patches/` or `game-overlay/`, run `setup-game.sh` again. `setup-mkxpz.sh` is only required when the engine install itself changed.
+`play.sh` runs `setup-mkxpz.sh` if `MKXP_BIN` is missing, and `setup-game.sh` if the game has no `mkxp.json`. It does not recopy overlays on every launch.
 
-`TGOM_VERBOSE=1 ./scripts/play.sh` prints the mkxp log tail after launch. Failed boots copy the newest game `errorlog.txt` to `logs/errorlog-latest.txt`.
+| After you edit | Run |
+|----------------|-----|
+| `game-overlay/` | `setup-game.sh` |
+| `patches/dummyPSystem_Utilities.rb`, `ruby18.rb`, `Win32API.rb` | `setup-mkxpz.sh` (copies into `kawariki/`) |
+| `patches/early_compat.rb`, `input_fix.rb` | next launch (`mkxp.json` already points at these files) |
 
-Engine files live under `~/Library/Application Support/RPGM-Launcher/` (`Z-universal.app`, `kawariki/`, `GMGSx.SF2`).
+`TGOM_VERBOSE=1 ./scripts/play.sh` prints the last lines of the mkxp log after launch. `play.sh` copies the newest `errorlog.txt` or `Game.rxdata.errorlog.txt` from the game folder to `logs/errorlog-latest.txt` at launch, and again if the process exits within a few seconds.
+
+Engine files go in `TGOM_SUPPORT`: `Z-universal.app`, `kawariki/`, `GMGSx.SF2`.
 
 ## How a boot is assembled
 
-We prefer **runtime shims** over rewriting `Data/Scripts.rxdata`, so game updates stay mergeable and RGSS-ish APIs apply globally. Surgical data patches (intro portrait coords) stay as data when they are content bugs, not language bugs.
+Runtime shims are preferred over rewriting `Data/Scripts.rxdata`. The Map001 gender-picture patch is a data edit, applied only when a real Ruby is available.
+
+`mkxp.json` `preloadScript` order: `patches/early_compat.rb`, then Kawariki `preload.rb`, then `patches/input_fix.rb`. Kawariki then loads `*.kawariki.rb` from the game folder (cwd) after `Scripts.rxdata`, in filename order.
 
 | Layer | File | When |
 |-------|------|------|
-| Kawariki / `ruby18` | `patches/ruby18.rb` → `kawariki/libs/ruby18.rb` | Via `early_compat` |
+| `ruby18` | `patches/ruby18.rb`, copied to `kawariki/libs/ruby18.rb` | Required from `early_compat` (support copy first, then the file next to `early_compat.rb`) |
 | sprintf, MRI snapshot, TEMP | `patches/early_compat.rb` (`TGMriCompat`) | First `preloadScript` |
-| Win32 stubs | `patches/Win32API.rb` → `kawariki/libs/Win32API.rb` | Kawariki load |
-| Game script replace | `patches/dummyPSystem_Utilities.rb` | Replaces `PSystem_Utilities` |
-| Input | `patches/input_fix.rb`, `input_fix.kawariki.rb` | Preload + overlay |
-| Boot nets | `utilities_fix`, `safety_net`, `map_fix`, `fonts_fix` | After Scripts.rxdata |
-| Display | `display_fix.kawariki.rb` | After Scripts.rxdata |
-| In-engine smoke | `zz_smoke_boot.kawariki.rb` | Last overlay; only if `TGOM_SMOKE=1` |
+| Win32 stubs | `patches/Win32API.rb`, copied to `kawariki/libs/Win32API.rb` | Kawariki load |
+| `PSystem_Utilities` replace | `patches/dummyPSystem_Utilities.rb`, copied to `kawariki/ports/` | Kawariki port replace |
+| Input | `input_fix.kawariki.rb` (real hook). `patches/input_fix.rb` only logs that preload ran. | Overlay after scripts |
+| Boot nets | `fonts_fix`, `map_fix`, `safety_net`, `utilities_fix` | After scripts |
+| Display | `display_fix.kawariki.rb` | After scripts |
+| In-engine smoke | `zz_smoke_boot.kawariki.rb` (last by name) | Always loads; checks run only if `TGOM_SMOKE=1` |
 
-`setup-game.sh` also writes `Game.ini`, copies intro portraits to `trainer000`/`trainer001`, and may patch Map001 gender-picture coordinates.
+`setup-game.sh` also writes `Game.ini`, copies `introBoy`/`introGirl` to `trainer000`/`trainer001` when those pictures exist, and may patch Map001 coordinates.
+
+`TGMriCompat.restore!` runs from `safety_net` on boot, after PE scripts have clobbered MRI methods.
 
 ## Display
 
-Logical size is 512×384. mkxp scales that framebuffer to the OS window. `mkxp.json` keeps `fixedAspectRatio` on and integer scaling off.
+Logical size is 512×384. `mkxp.json` sets `fixedAspectRatio` on and integer scaling off.
 
-On boot the window is the largest integer N× of 512×384 that fits the desktop (room for the menu bar and Dock), then centered.
+On boot, `display_fix` sizes the window to the largest integer multiple of 512×384 that fits the Finder desktop bounds minus a 64×120 inset, then centers it. If desktop size cannot be read, it uses 2×.
 
-In-game **Options → Screen Size** is the game’s setting, not a macOS display preference:
+In-game **Options → Screen Size** is the game’s setting:
 
 | Screen Size | Meaning |
 |-------------|---------|
-| S / M / L   | 1× / 2× / 3×, capped to what fits this Mac |
-| Full        | Fullscreen 4:3 fill |
+| S / M / L   | 1× / 2× / 3×, capped to the same max as boot |
+| Full        | Fullscreen 4:3 fill (`Graphics.fullscreen = true`) |
 
-Fullscreen is Screen Size → Full, Alt+Enter, or the macOS green button. Integer scaling stays off so 512×384 grows uniformly until one side of the monitor is filled (side bars on 16:9). Integer lock in a wide window is a postage-stamp picture.
+Alt+Enter also toggles mkxp fullscreen (`anyAltToggleFS`). Integer scaling stays off so 512×384 grows uniformly until one side of the monitor is filled (side bars on a 16:9 screen).
 
-The green button only resizes the window; it does not call `Graphics.fullscreen=`. `display_fix` watches `Graphics.fullscreen` on update so OS fullscreen still gets the 4:3 fill.
+The macOS green button only resizes the window. `display_fix` applies the 4:3 fill if `Graphics.fullscreen` becomes true; if the OS never sets that flag, fill mode does not change.
 
 ## Ruby 1.8 / Windows shims
 
@@ -84,12 +94,12 @@ Pokémon Essentials / RPG Maker XP was written for Ruby 1.8.7 inside RGSS. mkxp-
 | PE `String#bytesize` → `size` | Bytes vs characters | Binary/`String#==` shim wrong | `TGMriCompat` snapshot + restore |
 | PE `"".capitalize` | `nil.upcase` | Name/text crash | empty-safe capitalize restore |
 | PE `Array#first` no-arg only | `first(n)` ArgumentError | Latent crash | restore MRI `first`/`last` |
-| Missing Map052–075 / 87 | leftover Essentials IDs | Fly / heal / roam `load_data` | `safety_net` refuses missing rxdata |
+| Missing Map052–075 / 87 | leftover Essentials IDs | Fly / heal / roam `load_data` | `safety_net` refuses any missing `MapXXX.rxdata` |
 | `File.open(directory)` | `EISDIR` on macOS | charset / bitmap | `safeExists?` treats dirs as missing |
-| `.PNG` vs `.png` | case-sensitive volume | Bag / PC / Town Map | `pbResolveBitmap` tries `.PNG` |
+| `.PNG` vs `.png` | case-sensitive volume | Bag / PC / Town Map | `pbResolveBitmap` also tries `.PNG` / `.gif` / `.GIF` |
 | `RegOpenKeyExA` / registry | stub used to return 0 (success) | PE thought a key opened | Advapi32 open/query return 1 (fail) |
 | `SHGetSpecialFolderLocation` | stub 0 looked like success | bad Windows folder paths | Shell32 stubs fail |
-| `GetUserNameA` missing | empty / crash | trainer / save name | Advapi32 writes `$USER` |
+| `GetUserNameA` missing | empty / crash | trainer / save name | Advapi32 writes `$USER`, else `$LOGNAME`, else `Player` |
 | Unknown `Win32API.new` | used to return `nil` | `if api.call != 0` TypeError | default stub returns `0` |
 
 Hotspots still in TGOM scripts: `Sockets` URL-encode `sprintf('%%%02x', s[0])`, `Thread.critical` in BitmapCache/Audio, `File.exists?` in Compiler_PBS, high-byte `.chr` in FileTests, Win32 sockets. Lower risk: `when 1:` colon form, `Hash#select` return type, UTF-8 default encoding. Still fine: `each_line`, `Proc.new`, `?\n`, `pack`/`unpack`, normal `sprintf("%03d", int)`.
@@ -104,14 +114,14 @@ To re-audit: extend `./scripts/test-smoke.sh`, or inflate `Scripts.rxdata` and g
 ./scripts/test-smoke.sh
 ```
 
-With a local game under `game/Pokemon TGOM 4.2.3/`, more checks run (map data, scripts, overlays). Without it, tooling and Ruby shims are still exercised. Window-scale assertions live in `scripts/test-smoke.rb`.
+With a local game under `game/Pokemon TGOM 4.2.3/`, more checks run (map data, scripts, overlays). Without it, tooling and Ruby shims still run; map and Scripts scans are skipped. Window-scale assertions live in `scripts/test-smoke.rb`.
 
-In-engine smoke (mkxp boots, writes a result file, exits) is `game-overlay/zz_smoke_boot.kawariki.rb`. The `zz_` prefix is so it runs after `utilities_fix` and `safety_net`.
+In-engine smoke is `game-overlay/zz_smoke_boot.kawariki.rb`. The `zz_` name puts it last among overlays.
 
 ```bash
 TGOM_SMOKE=1 ./scripts/play.sh
 ```
 
-Result: `logs/smoke_boot_result.txt` when that path is available. Recopy overlays with `setup-game.sh` first if you changed them.
+`TGOM_SMOKE=true` is also accepted. Result is written to `logs/smoke_boot_result.txt` when that directory exists, otherwise next to the game or `/tmp`. Recopy overlays with `setup-game.sh` first if you changed `zz_smoke_boot` or the hooks it calls.
 
 A check is a pass only if it returns literal `true`. Skipped or unrun paths (for example “no bag yet”) are failures. The bag check constructs a `PokemonBag` and stores a Potion; it does not wait for New Game.

@@ -16,9 +16,9 @@ require "json"
 ROOT = File.expand_path("..", __dir__)
 GAME = File.join(ROOT, "game", "Pokemon TGOM 4.2.3")
 PATCHES = File.join(ROOT, "patches")
-KAWARIKI_DUMMY = File.expand_path(
-  "~/Library/Application Support/RPGM-Launcher/kawariki/ports/dummyPSystem_Utilities.rb"
-)
+_support = ENV["TGOM_SUPPORT"]
+_support = File.expand_path("~/Library/Application Support/RPGM-Launcher") if _support.nil? || _support.empty?
+KAWARIKI_DUMMY = File.join(_support, "kawariki", "ports", "dummyPSystem_Utilities.rb")
 
 $fails = []
 $passes = 0

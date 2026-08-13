@@ -1,7 +1,9 @@
 # Early Ruby 1.8 + capture native mkxp Input before Essentials overwrites it
 # Prefer deployed Kawariki copy, fall back to this repo's patches/ruby18.rb
+_ruby18_support = ENV["TGOM_SUPPORT"]
+_ruby18_support = File.expand_path("~/Library/Application Support/RPGM-Launcher") if _ruby18_support.nil? || _ruby18_support.empty?
 _ruby18_candidates = [
-  File.expand_path("~/Library/Application Support/RPGM-Launcher/kawariki/libs/ruby18.rb"),
+  File.expand_path("kawariki/libs/ruby18.rb", _ruby18_support),
   File.expand_path("ruby18.rb", __dir__)
 ]
 _ruby18_candidates.each do |path|
