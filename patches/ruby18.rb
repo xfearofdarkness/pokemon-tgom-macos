@@ -4,7 +4,7 @@
 # mkxp-z runs modern MRI. This file is preloaded via early_compat / Kawariki
 # and must stay defensive (idempotent, no game-specific requires).
 #
-# See docs/RUBY_COMPAT.md for the audit of PE script patterns.
+# See docs/DEVELOPMENT.md for the audit of PE script patterns.
 
 module Ruby18
   module ObjectPatch

@@ -27,6 +27,4 @@ From the repository root:
 ./scripts/play.sh
 ```
 
-That installs the engine if needed and applies overlays when `mkxp.json` is missing. After changing files in `game-overlay/` or `patches/`, run `./scripts/setup-game.sh` from the repo root again — `play.sh` will not recopy them if `mkxp.json` already exists.
-
-`setup-game.sh` copies `game-overlay/` into the game folder, writes `Game.ini` and `mkxp.json`, and applies small local fixes (intro portraits / Map001 gender pictures when needed).
+That installs the engine if needed and applies overlays. How overlays, display, and shims work is in [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md).

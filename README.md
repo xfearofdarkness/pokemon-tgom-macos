@@ -17,6 +17,7 @@ Bug reports are welcome. Include `logs/mkxpz_run.log` and, if it exists, `logs/e
 - macOS (Apple Silicon tested)
 - TGOM **4.2.3** from the original release
 - Network access once for engine / soundfont download
+- Stock macOS `bash`, `curl`, and `unzip` — no Homebrew, Python, or Xcode to play
 
 ## Setup
 
@@ -36,18 +37,13 @@ That downloads mkxp-z if needed, applies overlays if needed, and launches. Close
 
 If the game folder is missing, Finder opens `game/` so you can drop the extract there.
 
-Contributor-only split steps: `./scripts/setup-mkxpz.sh` then `./scripts/setup-game.sh`.
-
 ### Controls
 
-| Action     | Keys / where |
-|------------|----------------|
-| Move       | Arrow keys |
-| Confirm    | Z / Enter / Space |
-| Cancel     | X / Esc |
-| Fullscreen | Alt+Enter, in-game **Options → Screen Size → Full**, or the macOS green button |
-
-S / M / L in that same Options menu are 1× / 2× / 3× of 512×384, capped to what fits this Mac. That is the game’s Screen Size setting, not a macOS display preference.
+| Action  | Keys              |
+|---------|-------------------|
+| Move    | Arrow keys        |
+| Confirm | Z / Enter / Space |
+| Cancel  | X / Esc           |
 
 ## Layout
 
@@ -55,7 +51,7 @@ S / M / L in that same Options menu are 1× / 2× / 3× of 512×384, capped to w
 patches/        Preload shims and Kawariki ports
 game-overlay/   Runtime fixes applied into the game folder
 scripts/        Setup and launch
-docs/           Technical notes
+docs/           Development notes
 game/           Local game install (gitignored; see game/README.md)
 logs/           Launch log and last copied game errorlog
 ```
@@ -70,36 +66,15 @@ logs/           Launch log and last copied game errorlog
 
 | Area        | Notes |
 |-------------|--------|
-| Display     | 512×384 logical. Windowed is the largest integer N× that fits this Mac (centered). Fullscreen fills 4:3 (side bars on widescreen); integer lock stays off so the green button is not a postage stamp |
-| Input       | Native mkxp key handling |
-| Fonts       | Bundled Power Green family; installer dialog suppressed |
-| Ruby        | 1.8-era Essentials APIs on modern MRI ([docs/RUBY_COMPAT.md](docs/RUBY_COMPAT.md)) |
-| Bag / items | Essentials 18 storage helpers |
-| Forms       | fSpecies helpers restored where the utilities port omits them |
-| Intro       | Gender-select picture placement |
-| Characters  | Empty charset paths handled safely |
-| Missing maps | Leftover Essentials IDs refused instead of crashing |
+| Display      | Window and fullscreen scaling |
+| Input        | Native mkxp key handling |
+| Fonts        | Bundled Power Green family |
+| Ruby         | 1.8-era Essentials APIs on modern MRI |
+| Game content | Bag helpers, intro pictures, missing-map guards |
 
 ## Development
 
-After changing patches or overlays, recopy them. `play.sh` only runs `setup-game.sh` when `mkxp.json` is missing:
-
-```bash
-./scripts/setup-mkxpz.sh
-./scripts/setup-game.sh
-```
-
-Offline regression checks (optional, for contributors):
-
-```bash
-./scripts/test-smoke.sh
-```
-
-Details: [docs/SMOKE_TESTS.md](docs/SMOKE_TESTS.md).
-
-`TGOM_VERBOSE=1 ./scripts/play.sh` prints the mkxp log tail after launch.
-
-Local game trees are gitignored.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Local game trees are gitignored.
 
 ## Credits
 
