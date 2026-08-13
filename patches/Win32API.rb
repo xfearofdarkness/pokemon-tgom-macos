@@ -257,6 +257,9 @@ module Win32API
             Preload::Ini.writeIniString filename, appname, keyname, value
         end
 
+        GetUserDefaultLangID = ->() { 0x09 } # English
+        GetUserGeoID = ->(*_args) { 0 }
+
         GetCurrentThreadId = ->() { 1 }
         GetTempPath = GetTempPathA = ->(buflen, buf) do
             tmp = (ENV["TEMP"] || ENV["TMP"] || ENV["TMPDIR"] || "/tmp").to_s
@@ -393,11 +396,44 @@ module Win32API
         SteamAPI_Shutdown = ->{}
     end
 
+    module Advapi32
+        GetUserName = GetUserNameA = ->(buf, size_ptr) do
+            name = (ENV["USER"] || ENV["LOGNAME"] || "Player").to_s
+            name = "Player" if name.empty?
+            if buf
+                cap = buf.bytesize
+                s = name.byteslice(0, [cap - 1, 0].max)
+                buf[0, s.bytesize] = s if s && s.bytesize > 0
+                buf[s.bytesize] = "\0" if s.bytesize < cap
+            end
+            if size_ptr
+                begin
+                    size_ptr[0, 4] = [name.bytesize + 1].pack("V")
+                rescue StandardError
+                end
+            end
+            1
+        end
+        # MiniRegistry treats 0 as success — fail so callers use their defaults
+        RegOpenKeyExA = ->(*_args) { 1 }
+        RegCloseKey = ->(*_args) { 0 }
+        RegQueryValueExA = ->(*_args) { 1 }
+    end
+
+    module Shell32
+        # Nonzero = failure for SHGetSpecialFolderLocation
+        SHGetSpecialFolderLocation = ->(*_args) { 1 }
+        SHGetPathFromIDList = ->(*_args) { 0 }
+        SHGetKnownFolderPath = ->(*_args) { 1 }
+    end
+
     Libraries = {
         "kernel32" => Kernel32,
         "XINPUT1_3" => Xinput13,
         "user32" => User32,
         "steam_api" => SteamAPI,
+        "advapi32" => Advapi32,
+        "shell32" => Shell32,
     }
 
     def self.new(dllname, func, *rest)
@@ -411,6 +447,7 @@ module Win32API
         lib = Libraries[dllname]
         return lib.const_get(func, false) if lib.const_defined?(func, false) unless lib.nil?
         Preload.print("Warning: Win32API not implemented: #{dllname}##{func}")
-        return ->(*args){Preload.print "(STUB) #{dllname}##{func}: #{args}"}
+        # Return 0 so PE `if api.call != 0` / integer arithmetic does not see nil
+        return ->(*args){ Preload.print "(STUB) #{dllname}##{func}: #{args}"; 0 }
     end
 end

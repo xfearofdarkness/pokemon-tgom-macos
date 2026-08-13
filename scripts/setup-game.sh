@@ -9,11 +9,7 @@ GAME="$TGOM_GAME"
 SUPPORT="$HOME/Library/Application Support/RPGM-Launcher"
 
 if [[ ! -f "$GAME/Data/Scripts.rxdata" ]]; then
-  echo "Game not found at:" >&2
-  echo "  $GAME" >&2
-  echo >&2
-  echo "Extract Pokémon This Gym of Mine 4.2.3 there, then re-run." >&2
-  echo "See game/README.md" >&2
+  tg_missing_game_help
   exit 1
 fi
 
@@ -112,4 +108,4 @@ if app.parent.is_dir():
 print("  + mkxp.json")
 PY
 
-echo "Done. Run: ./scripts/play.sh"
+echo "Done. Start with: ./scripts/play.sh"

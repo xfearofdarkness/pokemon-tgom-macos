@@ -22,8 +22,13 @@ fi
 
 if [[ ! -f "$SUPPORT/GMGSx.SF2" ]]; then
   echo "Downloading MIDI soundfont GMGSx.SF2..."
-  curl -L --fail -o "$SUPPORT/GMGSx.SF2" \
-    "https://musical-artifacts.com/artifacts/841/GMGSx.SF2"
+  if ! curl -L --fail -o "$SUPPORT/GMGSx.SF2" \
+    "https://musical-artifacts.com/artifacts/841/GMGSx.SF2"; then
+    rm -f "$SUPPORT/GMGSx.SF2"
+    echo "Warning: soundfont download failed." >&2
+    echo "Music may be silent until GMGSx.SF2 exists at:" >&2
+    echo "  $SUPPORT/GMGSx.SF2" >&2
+  fi
 fi
 
 if [[ ! -f "$SUPPORT/kawariki/preload.rb" ]]; then
@@ -54,8 +59,7 @@ if [[ -f "$TGOM_GAME/Data/Scripts.rxdata" ]]; then
 else
   echo
   echo "No game at: $TGOM_GAME"
-  echo "Extract TGOM 4.2.3 there, then run: ./scripts/setup-game.sh"
-  echo "See game/README.md"
+  echo "Extract TGOM 4.2.3 there (see game/README.md), then ./scripts/play.sh"
 fi
 
-echo "Done. Engine ready."
+echo "Done. Engine ready. Start with: ./scripts/play.sh"

@@ -21,14 +21,92 @@ unless Thread.respond_to?(:critical)
 end
 Thread.critical = false if Thread.respond_to?(:critical=)
 
-ENV["TEMP"] ||= ENV["TMPDIR"] || "/tmp"
-ENV["TMP"]  ||= ENV["TEMP"]
-# Prefer real directories (macOS /tmp is often a symlink)
-begin
-  ENV["TEMP"] = File.realpath(ENV["TEMP"]) if ENV["TEMP"] && File.directory?(ENV["TEMP"])
-  ENV["TMP"]  = ENV["TEMP"]
-rescue StandardError
+# PE's "Ruby Utilities" later clobbers MRI String#bytesize / capitalize and
+# Array#first/last. Snapshot now (preload, before Scripts.rxdata) so the
+# on_boot overlay can put working methods back.
+module TGMriCompat
+  module_function
+
+  def snapshot!
+    @snap = {}
+    @snap[:string_bytesize]     = String.instance_method(:bytesize)
+    @snap[:string_capitalize]   = String.instance_method(:capitalize)
+    @snap[:string_capitalize_b] = String.instance_method(:capitalize!)
+    @snap[:array_first]         = Array.instance_method(:first)
+    @snap[:array_last]          = Array.instance_method(:last)
+    @snap
+  rescue StandardError
+    @snap ||= {}
+  end
+
+  def snap
+    @snap || snapshot!
+  end
+
+  # Reinstall after PE scripts load. capitalize stays "first char only"
+  # (PE style) but must not raise on "".
+  def restore!
+    s = snap
+    String.send(:define_method, :bytesize, s[:string_bytesize]) if s[:string_bytesize]
+    Array.send(:define_method, :first, s[:array_first]) if s[:array_first]
+    Array.send(:define_method, :last, s[:array_last]) if s[:array_last]
+    String.class_eval do
+      def capitalize
+        return dup if empty?
+        out = dup
+        ch = out[0]
+        out[0] = ch.upcase if ch
+        out
+      end
+
+      def capitalize!
+        return self if empty?
+        ch = self[0]
+        self[0] = ch.upcase if ch
+        self
+      end
+    end
+    true
+  end
+
+  def ensure_temp!
+    candidates = [ENV["TEMP"], ENV["TMP"], ENV["TMPDIR"], "/tmp"].compact
+    candidates.each do |c|
+      begin
+        dir = c.to_s
+        Dir.mkdir(dir) unless File.directory?(dir)
+        next unless File.directory?(dir)
+        dir = File.realpath(dir)
+        ENV["TEMP"] = dir
+        ENV["TMP"] = dir
+        return dir
+      rescue StandardError
+      end
+    end
+    ENV["TEMP"] = "/tmp"
+    ENV["TMP"] = "/tmp"
+    "/tmp"
+  end
+
+  # PE uses this as "can I File.open this path". Directories must not count
+  # (macOS File.open(dir) raises EISDIR; RGSS often returned a dummy).
+  def install_safe_exists!
+    Kernel.send(:define_method, :safeExists?) do |f|
+      return false if f.nil? || f == ""
+      path = f.to_s
+      begin
+        return false if File.directory?(path)
+        File.exist?(path)
+      rescue Errno::ENOENT, Errno::EINVAL, Errno::EACCES, Errno::EISDIR
+        false
+      end
+    end
+  end
 end
+
+TGMriCompat.snapshot!
+TGMriCompat.ensure_temp!
+TGMriCompat.install_safe_exists!
 # ---------------------------------------------------------------------------
 # sprintf / format / String#% — Ruby 1.8 → 3 compatibility
 #
@@ -147,7 +225,7 @@ class String
   end
 end
 
-STDERR.puts "[tg-early] sprintf/format/String#% + byte== + TEMP path shims installed"
+STDERR.puts "[tg-early] sprintf/format/String#% + byte== + TEMP + MRI snapshot shims installed"
 STDERR.flush
 # Snapshot mkxp's built-in Input methods (Essentials replaces these with Win32API)
 if defined?(Input)

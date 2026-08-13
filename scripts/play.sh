@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
-# Preferred launcher: native mkxp-z (Metal) — best path on Apple Silicon
+# Only player-facing command: install engine if needed, then launch.
+# Contributor steps stay in setup-mkxpz.sh / setup-game.sh.
 set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/env.sh"
 mkdir -p "$TGOM_LOGS"
 
 if [[ ! -x "$MKXP_BIN" ]]; then
-  echo "mkxp-z not found at: $MKXP_BIN" >&2
-  echo "Run: ./scripts/setup-mkxpz.sh" >&2
+  echo "Engine not installed yet. Downloading mkxp-z (once)..."
+  "$TGOM_ROOT/scripts/setup-mkxpz.sh"
+fi
+
+if [[ ! -x "$MKXP_BIN" ]]; then
+  echo "mkxp-z still not found at: $MKXP_BIN" >&2
+  echo "Try: ./scripts/setup-mkxpz.sh" >&2
   exit 1
 fi
 
 if [[ ! -f "$TGOM_GAME/Data/Scripts.rxdata" ]]; then
-  echo "Game not installed at: $TGOM_GAME" >&2
-  echo "See game/README.md — extract TGOM 4.2.3, then ./scripts/setup-game.sh" >&2
+  tg_missing_game_help
   exit 1
 fi
 
 if [[ ! -f "$TGOM_GAME/mkxp.json" ]]; then
-  echo "Overlays missing — run: ./scripts/setup-game.sh" >&2
-  exit 1
+  echo "Applying game overlays..."
+  "$TGOM_ROOT/scripts/setup-game.sh"
 fi
 
 if [[ -f "$TGOM_LOGS/mkxp.pid" ]]; then
@@ -27,29 +32,35 @@ if [[ -f "$TGOM_LOGS/mkxp.pid" ]]; then
     echo "Game already running (PID $old). Bring the window to the front."
     exit 0
   fi
-  # Stale pid file from a previous session
   rm -f "$TGOM_LOGS/mkxp.pid"
 fi
+
 # Pokémon Essentials expects Windows-style TEMP (AnimatedBitmap Dir.chdir)
 export TMPDIR="${TMPDIR:-/tmp}"
 export TEMP="${TEMP:-$TMPDIR}"
 export TMP="${TMP:-$TMPDIR}"
 mkdir -p "$TEMP"
 
-echo "Starting Pokemon This Gym of Mine via mkxp-z (Metal)..."
-echo "TEMP=$TEMP"
-echo "Log: $TGOM_LOGS/mkxpz_run.log"
+tg_copy_errorlog >/dev/null || true
+
 : > "$TGOM_LOGS/mkxpz_run.log"
 cd "$TGOM_GAME"
 "$MKXP_BIN" "$TGOM_GAME" >> "$TGOM_LOGS/mkxpz_run.log" 2>&1 &
 echo $! > "$TGOM_LOGS/mkxp.pid"
 sleep 3
 if kill -0 "$(cat "$TGOM_LOGS/mkxp.pid")" 2>/dev/null; then
-  echo "Running (PID $(cat "$TGOM_LOGS/mkxp.pid"))."
-  # Show only the interesting end of the log
-  tail -n 40 "$TGOM_LOGS/mkxpz_run.log"
+  echo "Running. Close the window to quit."
+  echo "Log: $TGOM_LOGS/mkxpz_run.log"
+  if [[ "${TGOM_VERBOSE:-}" == "1" ]]; then
+    tail -n 40 "$TGOM_LOGS/mkxpz_run.log"
+  fi
 else
-  echo "Process exited early. Log:" >&2
-  cat "$TGOM_LOGS/mkxpz_run.log" >&2
+  echo "The game exited before a window stayed open." >&2
+  echo "Last lines of $TGOM_LOGS/mkxpz_run.log:" >&2
+  tail -n 30 "$TGOM_LOGS/mkxpz_run.log" >&2 || true
+  if tg_copy_errorlog; then
+    echo "Copied game error log to $TGOM_LOGS/errorlog-latest.txt" >&2
+  fi
+  echo "Include that log (and errorlog-latest.txt if present) in a bug report." >&2
   exit 1
 fi

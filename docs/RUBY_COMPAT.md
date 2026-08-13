@@ -8,9 +8,11 @@ This project runs under **mkxp-z** with modern MRI (here: Ruby 3/4).
 | Layer | File | When loaded |
 |-------|------|-------------|
 | Kawariki / project `ruby18` | `patches/ruby18.rb` → `kawariki/libs/ruby18.rb` | Via `early_compat` preload |
-| sprintf shim | `patches/early_compat.rb` | First `preloadScript` entry |
+| sprintf / MRI snapshot / TEMP | `patches/early_compat.rb` (`TGMriCompat`) | First `preloadScript` entry |
+| Win32 stubs | `patches/Win32API.rb` → `kawariki/libs/Win32API.rb` | Kawariki load |
 | Game script replace | `patches/dummyPSystem_Utilities.rb` | Kawariki patches `PSystem_Utilities` |
-| Boot safety nets | `utilities_fix.kawariki.rb`, etc. | After scripts load |
+| Boot safety nets | `utilities_fix.kawariki.rb`, `safety_net.kawariki.rb`, `display_fix.kawariki.rb` | After scripts load |
+| In-engine smoke | `zz_smoke_boot.kawariki.rb` | Last overlay (`zz_`); only if `TGOM_SMOKE=1` |
 
 Offline checks: `./scripts/test-smoke.sh`.
 
@@ -36,6 +38,16 @@ Offline checks: `./scripts/test-smoke.sh`.
 | JSON regex `\x80-\x9f` without `/n` | invalid multibyte escape | Boot crash | E18 dummy + `/n` fix |
 | Empty `character_name` path | `EISDIR` on `Characters/` | New Game crash | `map_fix` |
 | Stale PE17 bag API | `POCKETAUTOSORT` | Item ball crash | E18 dummy + `utilities_fix` |
+| PE `String#bytesize` → `size` | Bytes vs characters | Binary/`String#==` shim wrong | `TGMriCompat` snapshot + restore |
+| PE `"".capitalize` | `nil.upcase` | Name/text crash | empty-safe capitalize restore |
+| PE `Array#first` no-arg only | `first(n)` ArgumentError | Latent crash | restore MRI `first`/`last` |
+| Missing Map052–075 / 87 | leftover Essentials IDs | Fly / heal / roam `load_data` | `safety_net` refuses missing rxdata |
+| `File.open(directory)` | `EISDIR` on macOS | charset / bitmap | `safeExists?` treats dirs as missing |
+| `.PNG` vs `.png` | case-sensitive volume | Bag / PC / Town Map | `pbResolveBitmap` tries `.PNG` |
+| `RegOpenKeyExA` / registry | stub used to return 0 (success) | PE thought a key opened | Advapi32 open/query return 1 (fail) |
+| `SHGetSpecialFolderLocation` | stub 0 looked like success | bad Windows folder paths | Shell32 stubs fail |
+| `GetUserNameA` missing | empty / crash | trainer / save name | Advapi32 writes `$USER` |
+| Unknown `Win32API.new` | used to return `nil` | `if api.call != 0` TypeError | default stub returns `0` |
 
 ### Known hotspots in TGOM scripts (audit)
 
@@ -84,6 +96,8 @@ When adding new PE plugins, watch for:
 2. `sprintf` / `%` with non-Integer numeric formats  
 3. Removed 1.8 APIs listed above  
 4. Win32-only DLLs (need Kawariki stubs or disable feature)  
+5. Map / fly / roam IDs whose `Data/MapXXX.rxdata` is not in the TGOM tree  
+6. PE `Ruby Utilities` redefining `String#bytesize` / `Array#first`  
 
 ## References
 
