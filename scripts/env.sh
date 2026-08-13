@@ -61,7 +61,7 @@ tg_bin() {
 }
 
 # Real Ruby only. /usr/bin/ruby without CLT/Xcode is a stub that opens a
-# "install developer tools" dialog — never exec that for players.
+# "install developer tools" dialog. Do not exec that from play/setup.
 tg_ruby() {
   local p
   if [[ -n "${RUBY:-}" && -x "${RUBY}" ]]; then
@@ -110,7 +110,7 @@ tg_missing_game_help() {
   echo >&2
   echo "Extract Pokémon This Gym of Mine 4.2.3 into that folder" >&2
   echo "(you should see Game.exe and Data/Scripts.rxdata)." >&2
-  echo "See game/README.md — this repo does not include the game." >&2
+  echo "See game/README.md for where to put the extract." >&2
   tg_open_game_dir
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Apply macOS/mkxp overlays onto a locally installed TGOM game tree.
-# Does not download the game — place it under game/Pokemon TGOM 4.2.3/ first.
+# Place the game under game/Pokemon TGOM 4.2.3/ first.
 set -euo pipefail
 
 _tg_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
@@ -59,7 +59,7 @@ if [[ -f "$pic/introBoy.png" && -f "$pic/introGirl.png" ]]; then
   echo "  + Pictures/trainer000|001.png ← introBoy|Girl"
 fi
 
-# Optional Map001 coordinate fix — only if a real Ruby is already there.
+# Optional Map001 coordinate fix, only if a real Ruby is already there.
 # Never call the macOS /usr/bin/ruby stub (it prompts for Xcode tools).
 _tg_ruby="$(tg_ruby || true)"
 if [[ -n "${_tg_ruby}" && -f "$GAME/Data/Map001.rxdata" && -f "$TGOM_ROOT/scripts/patch-map001-gender.rb" ]]; then

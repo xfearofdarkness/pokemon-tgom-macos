@@ -1,18 +1,14 @@
 # Development
 
-Players only need `./scripts/play.sh` (root README). This page is how the compatibility layer is structured and how to change it.
+How the compatibility layer is structured and how to change it.
 
 ## Requirements
 
-Play (`play.sh` → setup scripts as needed) uses only what macOS already ships: `/bin/bash`, `/usr/bin/curl`, `/usr/bin/unzip`, `/usr/bin/mktemp`. No Python, Homebrew, or Xcode.
+Smoke tests need Ruby. Set `RUBY` to an interpreter, or use one from Command Line Tools / Homebrew.
 
-First-time engine install also needs a writable `~/Library/Application Support/RPGM-Launcher/` (override with `TGOM_SUPPORT`) and network access. The game folder must be writable so overlays and `mkxp.json` can be copied.
+The game folder and `TGOM_SUPPORT` (default `~/Library/Application Support/RPGM-Launcher`) must be writable. First engine install needs network access.
 
-`setup-game.sh` writes `Game.ini` / `mkxp.json` in bash. The Map001 gender patch runs only if a **real** Ruby is already on the system. `/usr/bin/ruby` without Command Line Tools is a stub that would open an install dialog, so it is not called.
-
-Smoke tests (`./scripts/test-smoke.sh`) do need a real Ruby (`RUBY=...` or CLT/Xcode/Homebrew). They are optional.
-
-Optional overrides (all must be absolute paths): `TGOM_SUPPORT`, `MKXP_APP`, `MKXP_BIN`, `TGOM_SOUNDFONT`, `RUBY`.
+Optional overrides (absolute paths): `TGOM_SUPPORT`, `MKXP_APP`, `MKXP_BIN`, `TGOM_SOUNDFONT`, `RUBY`.
 
 ## Workflow
 
@@ -103,8 +99,6 @@ When adding PE plugins, watch for string byte indexing used as integers, `sprint
 To re-audit: extend `./scripts/test-smoke.sh`, or inflate `Scripts.rxdata` and grep for `Fixnum`, `exists?`, `sprintf` + `[0]`, `Thread.critical`.
 
 ## Smoke tests
-
-Not required to play.
 
 ```bash
 ./scripts/test-smoke.sh

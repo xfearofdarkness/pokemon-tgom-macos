@@ -172,7 +172,7 @@ apply_if_present "$TGOM_ROOT/patches/Win32API.rb" \
   "$SUPPORT/kawariki/libs/Win32API.rb"
 
 if [[ -f "$TGOM_GAME/Data/Scripts.rxdata" ]]; then
-  echo "Game tree found — applying overlays..."
+  echo "Game tree found. Applying overlays..."
   "$TGOM_ROOT/scripts/setup-game.sh"
 else
   echo
